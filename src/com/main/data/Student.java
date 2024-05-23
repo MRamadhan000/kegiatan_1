@@ -2,8 +2,11 @@ package com.main.data;
 import com.main.Main;
 import com.main.books.Book;
 import com.main.util.IMenu;
+
+import java.awt.im.InputContext;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 public class Student extends User implements IMenu {
     private String name,faculty,programStudi,NIM;
@@ -16,6 +19,8 @@ public class Student extends User implements IMenu {
         this.programStudi = programStudi;
     }
     public Student(){}
+
+
     @Override
     public void menu() {
         int numberBorrowed = 0;
@@ -24,21 +29,25 @@ public class Student extends User implements IMenu {
         Scanner inputObj = new Scanner(System.in);
         String inputNIM;
         while (true) {
-            System.out.print("Enter Your NIM (input 99 untuk back): ");
-            inputNIM = Main.inputNIM();
-            if (inputNIM.equals("99"))
-                break;
+            try {
+                System.out.print("Enter Your NIM (input 99 untuk back): ");
+                inputNIM = Main.inputNIM();
+                if (inputNIM.equals("99"))
+                    break;
 
-            student = Student.searchStudent(inputNIM);
-            if (student != null) {
-                isFound = true;
-                break;
-            } else
-                System.out.println("NIM Tidak Ada");
+                student = Student.searchStudent(inputNIM);
+                if (student != null) {
+                    isFound = true;
+                    break;
+                } else
+                    System.out.println("NIM Tidak Ada");
+            }catch (InputMismatchException e){
+                System.err.println("Invalid input format. Please enter a valid integer.");
+                inputObj.next(); // clear the in
+            }
         }
         if (!isFound && !inputNIM.equals("99"))
             System.out.println("INVALID NOT FOUND");
-
         if (isFound) {
             String[] arrId = new String[10];
             int[] arrDuration = new int[10];
@@ -46,77 +55,82 @@ public class Student extends User implements IMenu {
             while (isRun) {
                 student.displayBook(Student.getStudentBook());
                 System.out.print("===== Student Menu =====\n1. Buku Terpinjam \n2. Pinjam Buku\n3. Kembalikan Buku\n4. Pinjam Buku atau Logout\n5. Update Buku\nChoose option (1-3) : ");
-                int choose = inputObj.nextInt();
-                inputObj.nextLine();
-                switch (choose) {
-                    case 1:
-                        student.displayBookStudent();
-                        break;
-                    case 2:
-                        String inputId;
-                        do {
-                            System.out.print("Input Id buku yang ingin dipinjam (input 99 untuk kembali)\nInput : ");
-                            inputId = inputObj.nextLine();
-                            if (inputId.equals("99")) {
-                                break;
+                try {
+                    int choose = inputObj.nextInt();
+                    inputObj.nextLine();
+                    switch (choose) {
+                        case 1:
+                            student.displayBookStudent();
+                            break;
+                        case 2:
+                            String inputId;
+                            do {
+                                System.out.print("Input Id buku yang ingin dipinjam (input 99 untuk kembali)\nInput : ");
+                                inputId = inputObj.nextLine();
+                                if (inputId.equals("99"))
+                                    break;
+                                Book book = Student.searchBookAll(inputId);
+                                if (book == null)
+                                    System.out.println("BUKU DENGAN ID " + inputId + " TIDAK DITEMUKAN");
+                                else {
+                                    if (book.getStock() > 0) {
+                                        Book bookStudent = student.searchBookBorrowed(inputId);
+                                        if (bookStudent != null || Arrays.asList(arrId).contains(inputId)) {
+                                            System.out.println("ANDA TIDAK BISA MEMINJAM BUKU INI KARENA TELAH DIPINJAM");
+                                        } else {
+                                            int duration;
+                                            do {
+                                                System.out.print("Berapa lama buku akan dipinjam ? (maksimal 14 hari)\nInput lama (hari) : ");
+                                                duration = inputObj.nextInt();
+                                                inputObj.nextLine();
+                                                if (duration > 14)
+                                                    System.out.println("Masukkan durasi yang benar");
+                                            } while (duration > 14);
+                                            arrId[numberBorrowed] = inputId;
+                                            arrDuration[numberBorrowed] = duration;
+                                            numberBorrowed++;
+                                            book.setStock(book.getStock() - 1);
+                                        }
+                                    } else
+                                        System.out.println("Stok buku " + book.getTitle() + " sudah habis.");
+                                }
+                            } while (!inputId.equals("99"));
+                            break;
+                        case 3:
+                            System.out.print("Masukkan Id buku yang ingin dikembalikan : ");
+                            String inputAgain = inputObj.nextLine();
+                            Book book = student.searchBookBorrowed(inputAgain);
+                            if(book!=null)
+                                student.returnBook(inputAgain);
+                            else
+                                System.out.println("Buku dengan ID " + inputAgain + " tidak ditemukan");
+                            break;
+                        case 4:
+                            if (numberBorrowed > 0) {
+                                student.showTempBook(arrId, numberBorrowed, arrDuration);
+                                int choose2;
+                                System.out.print("Apakah anda ingin meminjam buku tersebut\n1. Ya\n2. Tidak\nChoose Option : ");
+                                choose2 = inputObj.nextInt();
+                                inputObj.nextLine();
+                                Main.addTempBook(student, numberBorrowed, choose2, arrId, arrDuration);
                             }
-                            Book book = Student.searchBookAll(inputId);
-                            if (book == null)
-                                System.out.println("BUKU DENGAN ID " + inputId + " TIDAK DITEMUKAN");
-                            else {
-                                if (book.getStock() > 0) {
-                                    Book bookStudent = student.searchBookBorrowed(inputId);
-                                    if (bookStudent != null || Arrays.asList(arrId).contains(inputId)) {
-                                        System.out.println("ANDA TIDAK BISA MEMINJAM BUKU INI KARENA TELAH DIPINJAM");
-                                    } else {
-                                        int duration;
-                                        do {
-                                            System.out.print("Berapa lama buku akan dipinjam ? (maksimal 14 hari)\nInput lama (hari) : ");
-                                            duration = inputObj.nextInt();
-                                            inputObj.nextLine();
-                                            if (duration > 14)
-                                                System.out.println("Masukkan durasi yang benar");
-                                        } while (duration > 14);
-                                        arrId[numberBorrowed] = inputId;
-                                        arrDuration[numberBorrowed] = duration;
-                                        numberBorrowed++;
-                                        book.setStock(book.getStock() - 1);
-                                    }
-                                } else
-                                    System.out.println("Stok buku " + book.getTitle() + " sudah habis.");
-                            }
-                        } while (!inputId.equals("99"));
-                        break;
-                    case 3:
-                        System.out.print("Masukkan Id buku yang ingin dikembalikan : ");
-                        String inputAgain = inputObj.nextLine();
-                        Book book = student.searchBookBorrowed(inputAgain);
-                        if(book!=null)
-                            student.returnBook(inputAgain);
-                        else
-                            System.out.println("Buku dengan ID " + inputAgain + " tidak ditemukan");
-                        break;
-                    case 4:
-                        if (numberBorrowed > 0) {
-                            student.showTempBook(arrId, numberBorrowed, arrDuration);
-                            int choose2;
-                            System.out.print("Apakah anda ingin meminjam buku tersebut\n1. Ya\n2. Tidak\nChoose Option : ");
-                            choose2 = inputObj.nextInt();
-                            inputObj.nextLine();
-                            Main.addTempBook(student, numberBorrowed, choose2, arrId, arrDuration);
-                        }
-                        isRun = false;
-                        break;
-                    case 5:
-                        student.updateBooks();
-                        break;
-                    default:
-                        System.out.println("INVALID INPUT");
-                        break;
+                            isRun = false;
+                            break;
+                        case 5:
+                            student.updateBooks();
+                            break;
+                        default:
+                            System.out.println("INVALID INPUT");
+                            break;
+                    }
+                }catch (InputMismatchException e){
+                    System.err.println("Invalid input format. Please enter a valid integer.");
+                    inputObj.next(); // clear the in
                 }
             }
         }
     }
+
     @Override
     public void addBook(Book book){
         borrowedBooks.add(book);

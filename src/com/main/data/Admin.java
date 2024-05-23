@@ -5,8 +5,10 @@ import com.main.books.Book;
 import com.main.books.HistoryBook;
 import com.main.books.StoryBook;
 import com.main.books.TextBook;
+import com.main.exception.custom.illegalAdminAcces;
 import com.main.util.IMenu;
 import java.util.ArrayList;
+import java.util.InputMismatchException;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -30,30 +32,35 @@ public class Admin extends User implements IMenu {
         Scanner inputObj = new Scanner(System.in);
         while (isRun) {
             System.out.print("===== Admin Menu =====\n1. Add Student\n2. Add Book \n3. Display Registered Student \n4. Display Available Books\n5. Update Book\n6. Logout\nChoose option (1-5) : ");
-            int choose = inputObj.nextInt();
-            inputObj.nextLine();
-            switch (choose) {
-                case 1:
-                    Main.addTempStudent();
-                    break;
-                case 2:
-                    this.inputBook();
-                    break;
-                case 3:
-                    this.displayStudent();
-                    break;
-                case 4:
-                    this.displayBook(Admin.getBookList());
-                    break;
-                case 5:
-                    this.updateBooks();
-                    break;
-                case 6:
-                    isRun = false;
-                    break;
-                default:
-                    System.out.println("INVALID INPUT");
-                    break;
+            try {
+                int choose = inputObj.nextInt();
+                inputObj.nextLine();
+                switch (choose) {
+                    case 1:
+                        Main.addTempStudent();
+                        break;
+                    case 2:
+                        this.inputBook();
+                        break;
+                    case 3:
+                        this.displayStudent();
+                        break;
+                    case 4:
+                        this.displayBook(Admin.getBookList());
+                        break;
+                    case 5:
+                        this.updateBooks();
+                        break;
+                    case 6:
+                        isRun = false;
+                        break;
+                    default:
+                        System.out.println("INVALID INPUT");
+                        break;
+                }
+            }catch (InputMismatchException e){
+                System.err.println("Invalid input format. Please enter a valid integer.");
+                inputObj.next();
             }
         }
     }
@@ -187,14 +194,18 @@ public class Admin extends User implements IMenu {
             x.displayInfo();
         }
     }
-    public boolean isAdmin(){
-        String username,pass;
-        System.out.print("Input username : ");
+    public boolean isAdmin() throws illegalAdminAcces {
+        String username, pass;
+        System.out.print("Input username: ");
         username = inputObj.nextLine();
-        System.out.print("Input passeord : ");
+        System.out.print("Input password: ");
         pass = inputObj.nextLine();
-        return username.equals(getAdminUserName()) && pass.equals(getAdminPassword());
+        if (username.equals(getAdminUserName()) && pass.equals(getAdminPassword()))
+            return true;
+        else
+            throw new illegalAdminAcces("Invalid Credentials");
     }
+
 
     public String generateId(){
         Random random = new Random();
